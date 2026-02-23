@@ -1,328 +1,245 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Juego de Coche - Velocidad Suave</title>
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-        background: #1a1a1a;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-      }
-      #game-container {
-        position: relative;
-      }
-      canvas {
-        background: #add8e6;
-        box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-        border: 4px solid #333;
-        display: block;
-      }
-      #startScreen {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 10;
-      }
-      #startButton {
-        background: #e74c3c;
-        color: white;
-        font-size: 24px;
-        padding: 15px 40px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-      }
-      /* Cuadro de instrucciones arriba a la izquierda */
-      #controlesUI {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 10px;
-        border-radius: 5px;
-        border-left: 4px solid #f1c40f;
-        z-index: 5;
-        pointer-events: none;
-      }
-      .tecla {
-        color: #f1c40f;
-        font-weight: bold;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="game-container">
-      <div id="controlesUI">
-        <div style="font-size: 14px; margin-bottom: 5px">
-          <strong> CONTROLES:</strong>
-        </div>
-        <div style="font-size: 12px">
-          <span class="tecla">➡️ Flecha Derecha:</span> ACELERAR<br />
-          <span class="tecla">⬅️ Flecha Izquierda:</span> FRENAR<br />
-          <span class="tecla">⬆️/⬇️ Flechas:</span> CAMBIAR CARRIL
-        </div>
-        <div
-          id="velDisplay"
-          style="margin-top: 5px; font-weight: bold; color: #2ecc71"
-        >
-          Vel: 0
-        </div>
-      </div>
+<head>
+<meta charset="UTF-8">
+<title>Juego de Coche - Cubrir Todo</title>
+<style>
+    body { 
+        margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; 
+        background: #1a1a1a; display: flex; justify-content: center;
+        align-items: center; height: 100vh;
+    }
 
-      <div id="startScreen">
-        <button id="startButton">JUGAR</button>
-      </div>
-      <canvas id="gameCanvas"></canvas>
+    #game-container { 
+        position: relative; 
+        width: 1000px; 
+        height: 600px; 
+        background: white; /* Esto ayuda a ver si quedan huecos */
+        overflow: hidden;
+    }
+    
+    canvas { 
+        display: block;
+        background: #ADD8E6; 
+    } 
+
+    /* --- EDICIÓN CSS PARA CUBRIR TODO LO BLANCO --- */
+    #interior-coche {
+        position: absolute;
+        bottom: 0;       /* Pegado abajo del todo */
+        left: 0;         /* Pegado a la izquierda */
+        width: 100%;     /* Cubre todo el ancho */
+        height: 40%;     /* <--- SUBE ESTO (ej. 50% o 60%) para cubrir más blanco */
+        object-fit: cover; /* IMPORTANTE: Estira la imagen para que no deje huecos */
+        z-index: 40;     /* Por encima del canvas */
+        pointer-events: none; 
+    }
+
+    #startScreen {
+        position: absolute; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.8); display: flex; 
+        flex-direction: column; justify-content: center; 
+        align-items: center; z-index: 30;
+    }
+    #startButton {
+        background: #e74c3c; color: white; font-size: 24px; 
+        padding: 15px 40px; border: none; border-radius: 8px; cursor: pointer;
+    }
+    #controlesUI {
+        position: absolute; top: 10px; left: 10px;
+        background: rgba(0, 0, 0, 0.7); color: white;
+        padding: 12px; border-radius: 5px; border-left: 4px solid #f1c40f;
+        z-index: 40; pointer-events: none;
+    }
+    .tecla { color: #f1c40f; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="controlesUI">
+        <div style="font-size: 14px; margin-bottom: 5px;"><strong>🎮 CONTROLES:</strong></div>
+        <div style="font-size: 12px; line-height: 1.5;">
+            <span class="tecla">➡️ Derecha:</span> ACELERAR<br>
+            <span class="tecla">⬅️ Izquierda:</span> FRENAR<br>
+            <span class="tecla">⬆️/⬇️ Flechas:</span> CARRIL
+        </div>
+        <div id="velDisplay" style="margin-top:8px; font-size: 16px; font-weight: bold; color: #2ecc71;">Velocidad: 0 km/h</div>
     </div>
 
-    <script>
-      const canvas = document.getElementById("gameCanvas");
-      const ctx = canvas.getContext("2d");
-      const startScreen = document.getElementById("startScreen");
-      const startButton = document.getElementById("startButton");
-      const velDisplay = document.getElementById("velDisplay");
+    <div id="startScreen">
+        <button id="startButton">JUGAR</button>
+    </div>
 
-      const GAME_WIDTH = 1000;
-      const GAME_HEIGHT = 600;
-      let roadHeight = 220;
-      let roadY = 150;
+    <canvas id="gameCanvas"></canvas>
 
-      const PLAYER_WIDTH = 160;
-      const PLAYER_HEIGHT = 90;
-      const ENEMY_WIDTH = 180;
-      const ENEMY_HEIGHT = 100;
+    <img src="images/img_coche_dentro.png" id="interior-coche">
+</div>
 
-      let gameStarted = false;
-      let lanes = [];
-      let clouds = [];
-      let enemyCars = [];
-      let lastSpawnTime = 0;
-      let invencibleHasta = 0;
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const startScreen = document.getElementById("startScreen");
+const startButton = document.getElementById("startButton");
+const velDisplay = document.getElementById("velDisplay");
 
-      // --- CONFIGURACIÓN DE VELOCIDAD SUAVE ---
-      let currentSpeed = 4; // Velocidad inicial lenta
-      let minSpeed = 6; // Mínimo para no detenerse del todo
-      let maxSpeed = 12; // Límite máximo para que no sea incontrolable
-      let acceleration = 0.05; // <--- MUCHO MÁS BAJA PARA ACELERAR LENTO
-      let braking = 0.03; // Freno efectivo pero no instantáneo
-      let lineOffset = 0;
+const GAME_WIDTH = 1000;  
+const GAME_HEIGHT = 600; 
+let roadHeight = 220; 
+let roadY = 150;      
 
-      const car = {
-        width: PLAYER_WIDTH,
-        height: PLAYER_HEIGHT,
-        x: 80,
-        y: 0,
-        targetY: 0,
-        speed: 12,
-        image: new Image(),
-        loaded: false,
-      };
-      car.image.src = "images/imagen_coche.png";
-      car.image.onload = () => (car.loaded = true);
+const PLAYER_WIDTH = 160;  
+const PLAYER_HEIGHT = 90; 
 
-      const enemyImages = [];
-      const sources = [
-        "images/coche_de_cara1.png",
-        "images/coche_de_cara2.png",
-      ];
-      sources.forEach((src) => {
-        const img = new Image();
-        img.src = src;
-        enemyImages.push(img);
-      });
+let gameStarted = false;
+let lanes = []; 
+let clouds = []; 
+let enemyCars = [];
+let lastSpawnTime = 0;
+let invencibleHasta = 0;
 
-      let keys = {};
-      window.addEventListener("keydown", (e) => (keys[e.key] = true));
-      window.addEventListener("keyup", (e) => (keys[e.key] = false));
+// --- VELOCIDAD ---
+let currentSpeed = 4;      
+let minSpeed = 2;          
+let maxSpeed = 12;         
+let acceleration = 0.04;   
+let braking = 0.25;        
+let lineOffset = 0;
 
-      function setupWorld() {
-        canvas.width = GAME_WIDTH;
-        canvas.height = GAME_HEIGHT;
-        lanes = [
-          roadY + roadHeight * 0.25 - car.height / 2,
-          roadY + roadHeight * 0.75 - car.height / 2,
-        ];
-        car.y = lanes[0];
-        car.targetY = lanes[0];
-        clouds = [];
-        for (let i = 0; i < 5; i++) {
-          clouds.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * (roadY - 80),
-            size: 25,
-            speed: 0.5,
-          });
-        }
-      }
-      setupWorld();
+const car = { x: 80, y: 0, targetY: 0, speed: 12, image: new Image(), loaded: false };
+car.image.src = "images/imagen_coche.png";
+car.image.onload = () => car.loaded = true;
 
-      function spawnEnemy() {
-        let laneToSpawn = Math.floor(Math.random() * lanes.length);
-        const tooClose = enemyCars.some((e) => e.x > canvas.width - 400);
-        if (tooClose && enemyCars.length > 0) {
-          const busyLane = enemyCars[enemyCars.length - 1].y;
-          laneToSpawn = lanes.indexOf(busyLane);
-        }
-        const imgIndex = Math.floor(Math.random() * enemyImages.length);
-        enemyCars.push({
-          width: ENEMY_WIDTH,
-          height: ENEMY_HEIGHT,
-          x: canvas.width + 200,
-          y: lanes[laneToSpawn],
-          speed: 1.5,
-          image: enemyImages[imgIndex],
-        });
-      }
+const enemyImages = [];
+const sources = ["images/coche_de_cara1.png", "images/coche_de_cara2.png"];
+sources.forEach(src => {
+    const img = new Image(); img.src = src; enemyImages.push(img);
+});
 
-      function update(timestamp) {
-        // Control de velocidad dinámica
-        if (keys["ArrowRight"]) {
-          currentSpeed += acceleration;
-        } else if (keys["ArrowLeft"]) {
-          currentSpeed -= braking;
-        } else {
-          // Fricción muy suave cuando no tocas nada
-          if (currentSpeed > 5) currentSpeed -= 0.01;
-        }
+let keys = {};
+window.addEventListener("keydown", (e) => keys[e.key] = true);
+window.addEventListener("keyup", (e) => keys[e.key] = false);
 
-        currentSpeed = Math.max(minSpeed, Math.min(currentSpeed, maxSpeed));
-        velDisplay.innerText =
-          "Velocidad: " + Math.floor(currentSpeed * 10) + " km/h";
+function setupWorld() {
+    canvas.width = GAME_WIDTH;
+    canvas.height = GAME_HEIGHT;
+    lanes = [
+        roadY + (roadHeight * 0.25) - (PLAYER_HEIGHT / 2), 
+        roadY + (roadHeight * 0.75) - (PLAYER_HEIGHT / 2)
+    ];
+    car.y = lanes[0];
+    car.targetY = lanes[0];
+    clouds = [];
+    for(let i=0; i < 5; i++) {
+        clouds.push({ x: Math.random() * canvas.width, y: Math.random() * (roadY - 80), size: 25, speed: 0.5 });
+    }
+}
+setupWorld();
 
-        lineOffset -= currentSpeed * 1.5;
-        if (lineOffset <= -100) lineOffset = 0;
+function spawnEnemy() {
+    let laneToSpawn = Math.floor(Math.random() * lanes.length);
+    const imgIndex = Math.floor(Math.random() * enemyImages.length);
+    enemyCars.push({ 
+        width: 180, height: 100,
+        x: canvas.width + 200, 
+        y: lanes[laneToSpawn], 
+        speed: 1.2, 
+        image: enemyImages[imgIndex]
+    });
+}
 
-        clouds.forEach((c) => {
-          c.x -= c.speed * (currentSpeed / 4);
-          if (c.x < -100) c.x = canvas.width + 100;
-        });
+function update(timestamp) {
+    if (keys["ArrowRight"]) currentSpeed += acceleration;
+    else if (keys["ArrowLeft"]) currentSpeed -= braking;
+    else if (currentSpeed > 5) currentSpeed -= 0.01;
+    
+    currentSpeed = Math.max(minSpeed, Math.min(currentSpeed, maxSpeed));
+    velDisplay.innerText = "Velocidad: " + Math.floor(currentSpeed * 10) + " km/h";
 
-        if (keys["ArrowUp"]) car.targetY = lanes[0];
-        if (keys["ArrowDown"]) car.targetY = lanes[1];
+    lineOffset -= currentSpeed * 1.5;
+    if (lineOffset <= -100) lineOffset = 0;
 
-        const diff = car.targetY - car.y;
-        if (Math.abs(diff) > car.speed) car.y += Math.sign(diff) * car.speed;
-        else car.y = car.targetY;
+    clouds.forEach(c => {
+        c.x -= c.speed * (currentSpeed / 4);
+        if (c.x < -100) c.x = canvas.width + 100;
+    });
 
-        for (let i = enemyCars.length - 1; i >= 0; i--) {
-          let e = enemyCars[i];
-          e.x -= e.speed + currentSpeed;
+    if (keys["ArrowUp"]) car.targetY = lanes[0];
+    if (keys["ArrowDown"]) car.targetY = lanes[1];
 
-          if (timestamp > invencibleHasta) {
-            if (
-              car.x + 40 < e.x + e.width - 40 &&
-              car.x + car.width - 40 > e.x + 40 &&
-              car.y + 25 < e.y + e.height - 25 &&
-              car.y + car.height - 25 > e.y + 25
-            ) {
-              gameStarted = false;
-              startScreen.style.display = "flex";
-              currentSpeed = 4;
-              return;
+    const diff = car.targetY - car.y;
+    if(Math.abs(diff) > car.speed) car.y += Math.sign(diff) * car.speed;
+    else car.y = car.targetY;
+
+    for(let i = enemyCars.length - 1; i >= 0; i--){
+        let e = enemyCars[i];
+        e.x -= (e.speed + currentSpeed);
+        if (timestamp > invencibleHasta) {
+            if (car.x + 40 < e.x + e.width - 40 && car.x + PLAYER_WIDTH - 40 > e.x + 40 &&
+                car.y + 25 < e.y + e.height - 25 && car.y + PLAYER_HEIGHT - 25 > e.y + 25) {
+                gameStarted = false;
+                startScreen.style.display = "flex";
+                currentSpeed = 4;
+                return;
             }
-          }
-          if (e.x < -300) enemyCars.splice(i, 1);
         }
-      }
+        if(e.x < -300) enemyCars.splice(i, 1);
+    }
+}
 
-      function draw(timestamp) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#87CEEB";
-        ctx.fillRect(0, 0, canvas.width, roadY);
-        ctx.fillStyle = "#FFD700";
-        ctx.beginPath();
-        ctx.arc(canvas.width - 60, 50, 30, 0, Math.PI * 2);
-        ctx.fill();
+function draw(timestamp) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Cielo
+    ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvas.width, roadY); 
+    ctx.fillStyle = "#FFD700"; ctx.beginPath(); ctx.arc(canvas.width - 60, 50, 30, 0, Math.PI * 2); ctx.fill(); 
 
-        clouds.forEach((c) => {
-          ctx.fillStyle = "white";
-          ctx.beginPath();
-          ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
-          ctx.fill();
-        });
+    clouds.forEach(c => {
+        ctx.fillStyle = "white"; ctx.beginPath();
+        ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2); ctx.fill();
+    });
 
-        ctx.fillStyle = "#27ae60";
-        ctx.fillRect(
-          0,
-          roadY + roadHeight,
-          canvas.width,
-          canvas.height - (roadY + roadHeight),
-        );
+    // Carretera
+    ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, roadY, canvas.width, roadHeight);
+    ctx.fillStyle = "#ecf0f1"; ctx.fillRect(0, roadY, canvas.width, 6);
+    ctx.fillRect(0, roadY + roadHeight - 6, canvas.width, 6);
 
-        ctx.fillStyle = "#2c3e50";
-        ctx.fillRect(0, roadY, canvas.width, roadHeight);
+    // Línea amarilla
+    ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 6; ctx.setLineDash([60, 40]); 
+    ctx.lineDashOffset = -lineOffset; ctx.beginPath(); 
+    ctx.moveTo(0, roadY + roadHeight/2); ctx.lineTo(canvas.width, roadY + roadHeight/2); 
+    ctx.stroke(); ctx.setLineDash([]);
 
-        ctx.fillStyle = "#ecf0f1";
-        ctx.fillRect(0, roadY, canvas.width, 6);
-        ctx.fillRect(0, roadY + roadHeight - 6, canvas.width, 6);
+    // Coches
+    if (timestamp < invencibleHasta && Math.floor(timestamp/100) % 2 === 0) ctx.globalAlpha = 0.4;
+    if(car.loaded) ctx.drawImage(car.image, car.x, car.y, PLAYER_WIDTH, PLAYER_HEIGHT);
+    ctx.globalAlpha = 1.0;
 
-        ctx.strokeStyle = "#f1c40f";
-        ctx.lineWidth = 6;
-        ctx.setLineDash([60, 40]);
-        ctx.lineDashOffset = -lineOffset;
-        ctx.beginPath();
-        ctx.moveTo(0, roadY + roadHeight / 2);
-        ctx.lineTo(canvas.width, roadY + roadHeight / 2);
-        ctx.stroke();
-        ctx.setLineDash([]);
+    enemyCars.forEach(e => {
+        if(e.image.complete) ctx.drawImage(e.image, e.x, e.y, e.width, e.height);
+    });
+}
 
-        if (
-          timestamp < invencibleHasta &&
-          Math.floor(timestamp / 100) % 2 === 0
-        )
-          ctx.globalAlpha = 0.4;
-
-        if (keys["ArrowLeft"] && currentSpeed > minSpeed + 1) {
-          ctx.shadowBlur = 20;
-          ctx.shadowColor = "red";
+function gameLoop(timestamp){
+    if(gameStarted){
+        if(!lastSpawnTime) lastSpawnTime = timestamp;
+        let spawnRate = 1400 - (currentSpeed * 20); 
+        if(timestamp - lastSpawnTime > Math.max(700, spawnRate)){ 
+            spawnEnemy(); lastSpawnTime = timestamp; 
         }
+        update(timestamp);
+    }
+    draw(timestamp);
+    requestAnimationFrame(gameLoop);
+}
+requestAnimationFrame(gameLoop);
 
-        if (car.loaded)
-          ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
-
-        ctx.globalAlpha = 1.0;
-        ctx.shadowBlur = 0;
-
-        enemyCars.forEach((e) => {
-          if (e.image.complete)
-            ctx.drawImage(e.image, e.x, e.y, e.width, e.height);
-        });
-      }
-
-      function gameLoop(timestamp) {
-        if (gameStarted) {
-          if (!lastSpawnTime) lastSpawnTime = timestamp;
-          let spawnRate = 1300 - currentSpeed * 15;
-          if (timestamp - lastSpawnTime > Math.max(600, spawnRate)) {
-            spawnEnemy();
-            lastSpawnTime = timestamp;
-          }
-          update(timestamp);
-        }
-        draw(timestamp);
-        requestAnimationFrame(gameLoop);
-      }
-      requestAnimationFrame(gameLoop);
-
-      startButton.addEventListener("click", () => {
-        enemyCars = [];
-        lastSpawnTime = 0;
-        invencibleHasta = performance.now() + 2000;
-        gameStarted = true;
-        startScreen.style.display = "none";
-      });
-    </script>
-  </body>
+startButton.addEventListener("click", () => {
+    enemyCars = []; lastSpawnTime = 0;
+    invencibleHasta = performance.now() + 2000; 
+    gameStarted = true;
+    startScreen.style.display = "none";
+});
+</script>
+</body>
 </html>
